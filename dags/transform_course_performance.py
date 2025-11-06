@@ -5,15 +5,15 @@ import time
 
 
 @dag(
-    dag_id="transform_movie_performance",
+    dag_id="transform_course_performance",
     max_active_runs=1,
     start_date=datetime(2023, 1, 1),
     is_paused_upon_creation=False,
     catchup=False,
-    schedule=(Dataset("transform_inventory_optimization")),
+    schedule=(Dataset("transform_resource_optimization")),
 )
 def dag_test():
-    @task(outlets=[Dataset("transform_movie_performance")])
+    @task(outlets=[Dataset("transform_course_performance")])
     def end_task():
         time.sleep(25)
 

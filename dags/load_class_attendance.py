@@ -5,17 +5,17 @@ import time
 
 
 @dag(
-    dag_id="transform_sales_aggregator",
+    dag_id="load_class_attendance",
     max_active_runs=1,
     start_date=datetime(2023, 1, 1),
     is_paused_upon_creation=False,
     catchup=False,
-    schedule="*/30 * * * *",
+    schedule="*/10 * * * *",
 )
 def dag_test():
-    @task(outlets=[Dataset("transform_sales_aggregator")])
+    @task(outlets=[Dataset("load_class_attendance")])
     def end_task():
-        time.sleep(40)
+        time.sleep(150)
 
     end_task()
 
