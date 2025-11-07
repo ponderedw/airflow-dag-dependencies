@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "airflow-dag-dependencies"
+version = "0.1.1a1"
+description = "An Apache Airflow plugin that provides interactive visualization of DAG dependencies, datasets, and trigger relationships. Enhance your workflow monitoring and planning with intuitive D3.js-powered graphs."
+license = "MIT"
+authors = ["Ponder"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12, <3.14"
+apache-airflow = "^3.1.0"
+
+[tool.poetry.plugins."airflow.plugins"]
+dag-dependencies-plugin = "airflow_dag_dependencies.plugins.dags_dependencies_plugin:DagDependenciesPlugin"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.urls]
+homepage = "https://github.com/ponderedw/airflow-dag-dependencies"
