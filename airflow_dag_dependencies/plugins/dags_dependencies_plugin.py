@@ -204,6 +204,13 @@ async def dag_dependencies_graph():
                 stroke-width: 3;
                 marker-end: url(#arrowhead-trigger);
             }
+
+            .link.sensor {
+                stroke: #9b59b6;
+                stroke-dasharray: 8,3;
+                stroke-width: 2;
+                marker-end: url(#arrowhead-sensor);
+            }
             
             .tooltip {
                 position: absolute;
@@ -280,6 +287,10 @@ async def dag_dependencies_graph():
                     <div class="legend-item">
                         <div class="legend-circle" style="background: #FBE4E0; border: 1px solid #FFFFFF;"></div>
                         <span>Manual</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background: #D7BDE2; border: 1px solid #FFFFFF;"></div>
+                        <span>Sensor</span>
                     </div>
                 </div>
                 <button class="reset-btn" onclick="resetGraph()">Reset View</button>
@@ -407,6 +418,19 @@ async def dag_dependencies_graph():
                 .append("path")
                 .attr("d", "M0,-5L10,0L0,5")
                 .attr("fill", "#ffc107");
+
+            // Sensor arrowhead (purple)
+            defs.append("marker")
+                .attr("id", "arrowhead-sensor")
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", 90)  // Adjusted for larger rectangle edge (80 + 10)
+                .attr("refY", 0)
+                .attr("markerWidth", 8)
+                .attr("markerHeight", 8)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,-5L10,0L0,5")
+                .attr("fill", "#9b59b6");
             
             const tooltip = d3.select("#tooltip");
             
@@ -587,6 +611,11 @@ async def dag_dependencies_graph():
                         tooltipText += `\\nDataset: ${d.dataset}`;
                     } else if (d.type === "trigger") {
                         tooltipText += "\\nDAG Trigger";
+                    } else if (d.type === "sensor") {
+                        tooltipText += `\\nSensor task: ${d.task_id}`;
+                        if (d.external_task_id) {
+                            tooltipText += `\\nExternal task: ${d.external_task_id}`;
+                        }
                     }
                     tooltip.style("display", "block")
                         .html(tooltipText.replace(/\\n/g, "<br>"))
@@ -617,15 +646,21 @@ async def dag_dependencies_graph():
                 .attr("stroke-width", 2)
                 .on("click", function(event, d) {
                     event.stopPropagation();
-                    // Use the correct Airflow URL format
-                    const airflowUrl = `/dags/${d.id}`;
-                    window.open(airflowUrl, '_blank');
+                    if (event.ctrlKey || event.metaKey) {
+                        // Ctrl/Cmd+click opens the DAG in Airflow
+                        window.open(`/dags/${d.id}`, '_blank');
+                    } else {
+                        // Plain click focuses the DAG + upstream & downstream
+                        const query = `+${d.id}+`;
+                        document.getElementById('searchInput').value = query;
+                        handleSearch(query);
+                    }
                 })
                 .on("mouseover", function(event, d) {
                     d3.select(this).attr("stroke-width", 5);
                     const dagUrl = `/dags/${d.id}`;
                     tooltip.style("display", "block")
-                        .html(`<strong>${d.id}</strong><br>Schedule: ${d.schedule}<br>URL: <a href="${dagUrl}" target="_blank" style="color: #87ceeb;">${dagUrl}</a><br>Click to view DAG`)
+                        .html(`<strong>${d.id}</strong><br>Schedule: ${d.schedule}<br>URL: <a href="${dagUrl}" target="_blank" style="color: #87ceeb;">${dagUrl}</a><br>Click to focus | Ctrl+click to open DAG`)
                         .style("left", (event.pageX + 10) + "px")
                         .style("top", (event.pageY - 10) + "px");
                 })
@@ -1399,6 +1434,23 @@ async def get_dag_dependencies():
                             })
                             print(f"Found trigger (by class): {dag_id}.{task.task_id} triggers {target_dag_id}")
                 
+                # Check for ExternalTaskSensor and subclasses (any task with external_dag_id)
+                if hasattr(task, 'external_dag_id') and task.external_dag_id:
+                    source_dag_id = task.external_dag_id
+                    if source_dag_id in dagbag.dags:
+                        link_obj = {
+                            "source": source_dag_id,
+                            "target": dag_id,
+                            "type": "sensor",
+                            "task_id": task.task_id
+                        }
+                        external_task_id = getattr(task, 'external_task_id', None)
+                        if external_task_id:
+                            link_obj["external_task_id"] = external_task_id
+                        links.append(link_obj)
+                        print(f"Found sensor: {dag_id}.{task.task_id} senses {source_dag_id}" +
+                              (f".{external_task_id}" if external_task_id else ""))
+
                 # Debug: Print task info for first few DAGs to understand structure
                 if dag_id in ["load_customer_feedback", "transform_sales_aggregator"]:
                     print(f"Task {dag_id}.{task.task_id}: type={type(task)}, attrs={[attr for attr in dir(task) if 'trigger' in attr.lower()]}")
