@@ -1127,12 +1127,11 @@ async def get_dag_dependencies():
     """API endpoint to get real DAG dependencies data using DagBag"""
     try:
         from airflow.models import DagBag
-        from airflow.datasets import Dataset
         from airflow.operators.trigger_dagrun import TriggerDagRunOperator
         import inspect
         
         # Load DAGs using DagBag
-        dagbag = DagBag(include_examples=False)
+        dagbag = DagBag()
         
         if dagbag.import_errors:
             print(f"DAG import errors: {dagbag.import_errors}")

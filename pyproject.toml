@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "airflow-dag-dependencies"
-version = "0.1.1a1"
+version = "0.1.1b1"
 description = "An Apache Airflow plugin that provides interactive visualization of DAG dependencies, datasets, and trigger relationships. Enhance your workflow monitoring and planning with intuitive D3.js-powered graphs."
 license = "MIT"
 authors = ["Ponder"]
